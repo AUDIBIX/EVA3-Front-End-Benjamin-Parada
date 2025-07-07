@@ -17,7 +17,7 @@ interface EditIndex{
 
 const initialStateQueja:Queja = { //Esto le da un valor inicial al state Queja, que se va a ir modificando
   problem_name:"",
-  affected:1,
+  affected:0,
   cat:"Mantención",
   desc:"",
   //Esto (date) crea una fecha con el formato Date y la fecha en la que se ejecutó el programa
@@ -52,10 +52,27 @@ export default function Home() {
 
     //Toma la data que viene del formulario y actualiza el estado "queja"
   const handleQueja = (name:string,value:string|number|Date) => {
-    setqueja({...queja, [name]: value})
+    setqueja({...queja, [name]:value})
   }
 
-  const handleSubir = () => { //Actualiza el estado y sube los datos al localstorage
+  const validarQueja = (q:Queja) => { // Valida los campos y devuelve un string de error si no pasa las validaciones
+    const validCat = ["Mantención","Seguridad","Limpieza","Ruido","Servicios públicos","Otro"]
+    const validState = ["Pendiente","En progreso","Completada"]
+    if (q.problem_name.length < 1){return "El campo 'Nombre' no debe estar vacío"}
+    if (q.affected < 1){return "El numero de afectados no puede ser menor que 1"}
+    if (!validCat.includes(q.cat)){return "Debe seleccionar una de las categorías proporcionadas"}
+    if (q.date > new Date()){return "La fecha no puede ser futura"}
+    if (q.desc.length < 1){return "El campo 'Descripción' no puede estar vacío"}
+    if (!validState.includes(q.state)){return "Seleccione una de los estados proporcionados"}
+    return ("") // Se devuelve vacío si no hay error
+  }
+
+  const handleSubir = () => { //Actualiza el estado y sube los datos al localstorage, si no hay ningun error
+    let val_error = validarQueja(queja)
+    if (val_error != ""){
+      alert(val_error)
+      return
+    }
     const newList = [...quejas, queja]
     setquejas(newList)
     setqueja(initialStateQueja)
@@ -65,7 +82,7 @@ export default function Home() {
   const handleRemove = (i:number) => {
     let quejasremoved = quejas.filter((queja,index) => index != i) // Devuelve una copia de la lista sin los elementos que no coincidan
     setquejas(quejasremoved)
-    localstorage.setItem("quejas", JSON.stringify(quejas))
+    localstorage.setItem("quejas", JSON.stringify(quejasremoved))
     }
 
   const quejaEditar = (name:string,value:string|number|Date) => { // Funcion para actualizar el estado "quejaEdit" cuando se modifique el formulario
@@ -84,6 +101,7 @@ export default function Home() {
     newList[index] = quejaEdit
     setquejas(newList)
     setquejaEdit(initialStateQueja)
+    seteditIndex(initialStateEditIndex)
     localstorage.setItem("quejas", JSON.stringify(newList))
     }
 
@@ -100,16 +118,19 @@ export default function Home() {
         type="text" 
         name="problem_name" 
         placeholder="Plaza sucia"
+        value={queja.problem_name}
         onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}></input><br/>
         <p>Número de personas afectadas:</p>
         <input 
         type="number" 
         name="affected" 
         placeholder="Número >= 1"
-        onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}></input><br/>
+        value={queja.affected}
+        onChange={(e)=>{handleQueja(e.currentTarget.name,parseInt(e.currentTarget.value))}}></input><br/>
         <p>Categoría:</p>
         <select 
         name="cat"
+        value={queja.cat}
         onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}>
           <option value="Mantención">Mantención</option>
           <option value="Seguridad">Seguridad</option>
@@ -119,20 +140,22 @@ export default function Home() {
           <option value="Otro">Otro</option>
         </select><br/>
         <p>Descripcion del problema:</p>
-        <input 
+        <textarea 
         name="desc" 
-        type="textarea" 
         placeholder="Ej. Alcantarilla rota"
-        onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}></input><br/>
+        value={queja.desc}
+        onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}></textarea><br/>
         <p>Fecha de ingreso de la queja:</p>
         <input 
         type="date" 
         name="date" 
         placeholder="YYYY/MM/DD"
-        onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}></input><br/>
+        value={queja.date.toISOString().split("T")[0]}
+        onChange={(e)=>{handleQueja(e.currentTarget.name,new Date(e.currentTarget.value))}}></input><br/>
         <p>Estado:</p>
         <select 
         name="state"
+        value={queja.state}
         onChange={(e)=>{handleQueja(e.currentTarget.name,e.currentTarget.value)}}>
           <option value="Pendiente">Pendiente</option>
           <option value="En progreso">En progreso</option>
@@ -173,12 +196,11 @@ export default function Home() {
           <option value="Otro">Otro</option>
         </select><br/>
         <p>Descripcion del problema:</p>
-        <input 
+        <textarea 
         name="desc" 
-        type="textarea" 
         placeholder="Ej. Alcantarilla rota"
         onChange={(e)=>{quejaEditar(e.currentTarget.name,e.currentTarget.value)}}
-        value={quejaEdit.desc}></input><br/>
+        value={quejaEdit.desc}></textarea><br/>
         <p>Fecha de ingreso de la queja:</p>
         <input 
         type="date" 
