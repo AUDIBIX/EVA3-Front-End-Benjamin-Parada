@@ -42,9 +42,10 @@ export default function Home() {
   }
 
   const handleSubir = () => { //Actualiza el estado y sube los datos al localstorage
-    setquejas([...quejas, queja])
+    const newList = [...quejas, queja]
+    setquejas(newList)
     setqueja(initialStateQueja)
-    localstorage.setItem("quejas", JSON.stringify(quejas))
+    localstorage.setItem("quejas", JSON.stringify(newList))
   }
 
   const handleRemove = (i:number) => {
