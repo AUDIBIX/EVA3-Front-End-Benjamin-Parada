@@ -7,7 +7,7 @@ interface Queja{
   affected:number
   cat:string
   desc:string
-  date:Date
+  date:string
   state:string
 }
 
@@ -16,7 +16,9 @@ const initialStateQueja:Queja = { //Esto le da un valor inicial al state Queja, 
   affected:1,
   cat:"maintenance",
   desc:"",
-  date: new Date(), //Esto crea una fecha con el formato Date y la fecha en la que se ejecutó el programa
+  //Esto (date) crea una fecha con el formato Date y la fecha en la que se ejecutó el programa,
+  // la inserta como texto para mas facilidad al llevar y traer del localstorage
+  date: new Date().toLocaleDateString(),
   state:"pending"
 }
 
@@ -26,23 +28,37 @@ export default function Home() {
   const [queja, setqueja] = useState(initialStateQueja)
   const [quejas, setquejas] = useState<Queja[]>([])
 
-  useEffect(() => {
+  useEffect(() => { //Tomar la información guardada en localstorage al cargar la página
     let quejasStr = localstorage.getItem("quejas")
     if (quejasStr != null){
-      let quejasList = JSON.parse(quejasStr)
+      let quejasList = JSON.parse(quejasStr) // Devuelve todo como string
       setquejas(quejasList)
     }
   },[])
 
+    //Toma la data que viene del formulario y actualiza el estado "queja"
   const handleQueja = (name:string,value:string|number|Date) => {
     setqueja({...queja, [name]: value})
   }
 
-  const handleSubir = () => {
-    localstorage.setItem("quejas", JSON.stringify([...quejas,queja]))
+  const handleSubir = () => { //Actualiza el estado y sube los datos al localstorage
+    setquejas([...quejas, queja])
+    setqueja(initialStateQueja)
+    localstorage.setItem("quejas", JSON.stringify(quejas))
+  }
+
+  const handleRemove = (i:number) => {
+    let quejasremoved = quejas.filter((queja,index) => index != i)
+    setquejas(quejasremoved)
+    localstorage.setItem("quejas", JSON.stringify(quejas))
+    }
+
+  const handleEdit = (index:number) => {
+
   }
 
   return (
+    <>
     <form>
       <h1>Ingreso de quejas</h1>
       <p>Nombre:</p>
@@ -90,5 +106,38 @@ export default function Home() {
       </select><br/>
       <button type="button" name="form_submit" onClick={() => {handleSubir()}} >Subir queja</button>
     </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Personas afectadas</th>
+          <th>Categoría</th>
+          <th>Descripción del problema</th>
+          <th>Fecha de ingreso</th>
+          <th>Estado</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {quejas.map((q,index)=>{
+          return(
+            <tr>
+              <td>{q.problem_name}</td>
+              <td>{q.affected}</td>
+              <td>{q.cat}</td>
+              <td>{q.desc}</td>
+              <td>{q.date}</td> 
+              <td>{q.state}</td>
+              <td>
+                <button type="button" onClick={() => handleEdit(index)}>Editar</button>
+                <button type="button" onClick={() => handleRemove(index)}>Eliminar</button>
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+    </>
   );
 }
