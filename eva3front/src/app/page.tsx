@@ -1,6 +1,26 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { addDoc, collection, getDocs, getFirestore } from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDq6MBKwcs8m5iesr17j_iqQb776FvexvQ",
+  authDomain: "eva4-21d7b.firebaseapp.com",
+  projectId: "eva4-21d7b",
+  storageBucket: "eva4-21d7b.firebasestorage.app",
+  messagingSenderId: "500190283421",
+  appId: "1:500190283421:web:ce800a3386ba9f5fce7674"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app)
 
 interface Queja{
   problem_name:string
@@ -48,7 +68,46 @@ export default function Home() {
       }))
       setquejas(quejasTyped)
     }
-  },[])
+  },[]);
+
+  const addData = async ()=>{// funcion que sube la información primero al localstorage y luego a Firebase
+    let val_error = validarQueja(queja)
+    if (val_error != ""){
+      alert(val_error)
+      return
+    }
+
+    const newList = [...quejas, queja]
+    setquejas(newList)
+    setqueja(initialStateQueja)
+    localstorage.setItem("quejas", JSON.stringify(newList))
+
+    try{
+      await addDoc(collection(db,"quejas"),queja)
+      console.log("Datos ingresados correctamente a Firebase")
+    }
+    catch(e){
+      console.log("Hubo un error al agregar los datos a Firebase:",e)
+    }
+  }
+
+  const getData = async ()=>{//función que trae la data de firebase y si da error de localstorage
+    try{
+      let data = await getDocs(collection(db,"quejas"))
+    }
+    catch{
+      let quejasStr = localstorage.getItem("quejas")
+      if (quejasStr != null){
+        let quejasParsed = JSON.parse(quejasStr)
+        let quejasTyped = quejasParsed.map((q:Queja)=>({
+          ...q,
+          affected: Number(q.affected),
+          date: new Date(q.date)
+        }))
+        setquejas(quejasTyped)
+    }
+    }
+  };
 
     //Toma la data que viene del formulario y actualiza el estado "queja"
   const handleQueja = (name:string,value:string|number|Date) => {
@@ -73,6 +132,7 @@ export default function Home() {
       alert(val_error)
       return
     }
+
     const newList = [...quejas, queja]
     setquejas(newList)
     setqueja(initialStateQueja)
@@ -161,7 +221,7 @@ export default function Home() {
           <option value="En progreso">En progreso</option>
           <option value="Completada">Completada</option>
         </select><br/>
-        <button type="button" name="form_submit" onClick={() => {handleSubir()}} >Subir queja</button>
+        <button type="button" name="form_submit" onClick={() => {addData()}} >Subir queja</button>
       </form>
       </div>
 
